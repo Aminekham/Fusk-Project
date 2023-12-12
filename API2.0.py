@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask import render_template
 import os
 import pandas as pd
 import numpy as np
@@ -25,6 +26,9 @@ with open(tokenizer_path, 'rb') as handle:
 
 label_encoder = joblib.load('label_encoder.pkl')
 
+@app.route('/')
+def index():
+    return render_template('upload_form.html')
 
 def image_to_articles(image):
     """ 
@@ -185,4 +189,5 @@ def predict_contract():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
+
