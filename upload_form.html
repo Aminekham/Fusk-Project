@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="utf-8" />
+    <title>Contract Prediction</title>
+</head>
+
+<body>
+    <h1>Contract Prediction</h1>
+    <form action="/predict_contract" method="post" enctype="multipart/form-data">
+        <label for="image">Upload an image:</label>
+        <input type="file" id="image" name="image" accept=".jpg, .jpeg, .png" required>
+        <br>
+        <button type="submit">Predict Contract</button>
+    </form>
+</body>
+
+</html>
