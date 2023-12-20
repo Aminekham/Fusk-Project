@@ -3,6 +3,8 @@ FROM python:3.10
 # Install system dependencies
 RUN apt-get update && apt-get install -y libgl1-mesa-glx
 RUN apt install -y build-essential python3-dev python3-pip
+RUN apt-get update && apt-get install -y tesseract-ocr
+
 # Set working directory
 WORKDIR /app
 # Clone TensorFlow source code
