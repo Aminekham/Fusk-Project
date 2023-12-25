@@ -22,4 +22,4 @@ WORKDIR /app
 COPY . .
 
 # Run your application
-CMD ["python", "API2.0.py"]
+CMD ["gunicorn", "app:app"]

@@ -1,0 +1,17 @@
+﻿
+
+Contrat de Location à Courte Durée
+Et ce, entre les soussignées :
+1. {1} {2} demeurant(e) à {3}, titulaire de la CIN numéro {4} délivrée le {5} à {6},
+ci-après dénommé(e) « le propriétaire »,
+d'une part,
+2. {7} {8}, titulaire de la CIN n° {9} délivrée le {10} à {11}
+et ci-après dénommé(e) « le locataire >>,
+d'autre part.
+Il est préalablement exposé ce qui suit :
+{1}{2} est propriétaire d'un(e) {12}, situé à {13}, destiné(e) à la location pour usage d'habitation;
+Le locataire a exprimé son désir de louer la totalité de ladite propriété, le propriétaire a donné son accord.
+Les deux parties se sont alors rapprochées pour convenir et arrêter ce qui suit :
+ARTICLE PREMIER : La présente location est consentie pour une durée de {14} jours à compter du {15} pour se terminer le {16}. Le bail cesse de plein droit à l'expiration de ce terme sans qu'il soit nécessaire pour le bailleur de notifier le congé. Elle ne pourra être prorogée sans l'accord préalable du bailleur ou de son représentant.
+ARTICLE 2: La présente location est consentie moyennant un loyer net de {17} dinars payable à l'avance pour la durée de la location en jours.
+ARTICLE 4: Le Locataire s'oblige à remettre à la signature de la présente, en dépôt à titre de cautionnement de {18} dinars. Ce montant sera restitué au Locataire après l'expiration ou la résiliation du présent bail, après inspection des lieux et s'assurer de leur garde en bon état. Toute somme dépensée pour les réparations ou entretiens s'avérant nécessaires à la remise en bon état des lieux sera déduite de ladite somme déposée en cautionnement.
