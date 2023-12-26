@@ -154,7 +154,7 @@ def predict():
             'nda': './contracts/nda/nda.csv',
             'partenariat': './contracts/partenariat/partenariat.csv',
             'Location_Habitation': './contracts/Location_Habitation/Location_Habitation.csv',
-            'Location_courte_durée': './contracts/Location_courte_durée/Location_courte_durée.csv',
+            'Location_courte_duree': './contracts/Location_courte_duree/Location_courte_duree.csv',
             'influencer': './contracts/influencer/influencer.csv',
             'Sous_location_contrat': './contracts/Sous_location_contrat/Sous_location_contrat.csv',
         }
