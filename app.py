@@ -145,7 +145,7 @@ def predict():
         suggestion_tokenizer = suggestion_tokenizers[predicted_class]
 
         dataset_mapping = {
-            'Contrat de prestation de Service': './contracts/Contrat_de_prestation_de_Service/Contrat_de_prestation_de_Service.csv',
+            'Contrat de prestation de service': './contracts/Contrat_de_prestation_de_Service/Contrat_de_prestation_de_Service.csv',
             'cdd': './contracts/cdd/cdd.csv',
             'cdi': './contracts/cdi/cdi.csv',
             'contrat de vente et achat': './contracts/contrat_de_vente_et_achat/contrat de vente et achat.csv',
