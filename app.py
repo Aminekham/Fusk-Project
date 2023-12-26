@@ -27,6 +27,9 @@ def image_to_articles(image):
         threshold_img = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
         text = pytesseract.image_to_string(threshold_img)
 
+        # Default keyword
+        keyword = "ARTICLE"
+
         article_matches = re.finditer(r'\b(?:ARTICLE|Article|article)\b', text)
         indices = [match.start() for match in article_matches]
 
@@ -40,7 +43,31 @@ def image_to_articles(image):
             if article_content:
                 articles_dict[len(articles_dict) + 1] = article_content
 
+        # If the dictionary is empty, use anything after ":"
+        if not articles_dict:
+            colon_index = text.find(":")
+            if colon_index != -1:
+                keyword = text[:colon_index].strip()
+
+        # Re-run with the determined keyword
+        article_matches = re.finditer(fr'\b(?:{re.escape(keyword)})\b', text, re.IGNORECASE)
+        indices = [match.start() for match in article_matches]
+
+        # Reset dictionary
+        articles_dict = {}
+
+        for i in range(len(indices)):
+            start_index = indices[i]
+            end_index = indices[i + 1] if i + 1 < len(indices) else None
+            article_content = text[start_index:end_index].strip()
+            if article_content:
+                articles_dict[len(articles_dict) + 1] = article_content
+
         return articles_dict
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return {}
+
 
     except Exception as e:
         return {"error": str(e)}
@@ -131,7 +158,7 @@ def predict():
         # Predict the contract type without saving the image
         articles = image_to_articles(image_file)
         predicted_class = test_mem(articles)
-
+        
         result_dict = {'predicted_contract': predicted_class}
         result_dict['recommended_content'] = []
         # Directory containing suggestion models and tokenizers
