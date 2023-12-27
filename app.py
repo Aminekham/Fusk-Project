@@ -10,6 +10,9 @@ from keras.models import load_model
 import pandas as pd
 import numpy as np
 from collections import Counter
+from heapq import nlargest
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 
 app = Flask(__name__)
@@ -160,6 +163,40 @@ def test_mem(articles):
 
     return most_common_word
 
+def calculate_similarity(input_articles, suggestion_text):
+    # Combine input articles into a single string
+    input_text = ' '.join(input_articles)
+
+    if not input_text or not suggestion_text:
+        return 0.0
+
+    # Initialize TF-IDF vectorizer
+    vectorizer = TfidfVectorizer()
+
+    # Fit and transform the vectorizer on the combined text
+    tfidf_matrix_input = vectorizer.fit_transform([input_text])
+    tfidf_matrix_suggestion = vectorizer.transform([suggestion_text])
+
+    # Calculate cosine similarity between input articles and suggestion text
+    similarity_score = cosine_similarity(tfidf_matrix_input, tfidf_matrix_suggestion).flatten()[0]
+
+    return similarity_score
+
+def get_most_similar_suggestions(input_articles, all_suggestions):
+    # Calculate similarity scores for each suggestion
+    similarity_scores = [calculate_similarity(input_articles, suggestion) for suggestion in all_suggestions]
+
+    # Combine suggestions with their corresponding similarity scores
+    suggestions_with_scores = zip(all_suggestions, similarity_scores)
+
+    # Keep only the best two suggestions based on similarity score
+    best_suggestions = nlargest(2, suggestions_with_scores, key=lambda x: x[1])
+
+    # Extract only the suggestion content
+    best_suggestions_content = [suggestion[0] for suggestion in best_suggestions]
+
+    return best_suggestions_content
+
 
 
 
@@ -204,17 +241,26 @@ def predict():
             'Sous_location_contrat': './contracts/Sous_location_contrat/Sous_location_contrat.csv',
         }
 
-        for article_number, article_text in articles.items():
-            dataset = dataset_mapping[predicted_class]
+        all_article_texts = list(articles.values())
 
-            result_dict['recommended_content'].append(get_suggestions_for_article(article_text,
-                                                                           suggestion_model,
-                                                                           suggestion_tokenizer,
-                                                                           dataset))
-        return jsonify(result_dict)
+        # Get suggestions for all articles
+        all_suggestions = []
+        for article_text in all_article_texts:
+            dataset = dataset_mapping[predicted_class]
+            suggestions = get_suggestions_for_article(article_text,
+                                                      suggestion_model,
+                                                      suggestion_tokenizer,
+                                                      dataset)
+            all_suggestions.extend(suggestions.get('recommended_content', []))
+
+        print(all_suggestions)
+        # Keep only the best two suggestions based on content similarity
+        best_suggestions = get_most_similar_suggestions(list(articles.values()), all_suggestions)
+        return jsonify({'recommended:': best_suggestions})
 
     except Exception as e:
         return jsonify({'error try this out': str(e)})
+
 
 
 if __name__ == '__main__':
