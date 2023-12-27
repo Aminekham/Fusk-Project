@@ -9,15 +9,18 @@ import re
 from keras.models import load_model
 import pandas as pd
 import numpy as np
+from collections import Counter
 
 
 app = Flask(__name__)
 
-# Load the trained SGDClassifier model
-model = joblib.load('contract_classification_model_sgdc.pkl')
+random_forest_model = joblib.load("random_forest_model.pkl")
 
 # Load the associated label encoder
-label_encoder = joblib.load('label_encoder_sgdc.pkl')
+label_encoder = joblib.load("label_encoder.pkl")
+
+# Initialize TF-IDF vectorizer
+vectorizer = joblib.load("tfidf_vectorizer.pkl")
 
 def image_to_articles(image):
     try:
@@ -69,8 +72,6 @@ def image_to_articles(image):
         return {}
 
 
-    except Exception as e:
-        return {"error": str(e)}
 
 def load_suggestion_models(models_dir):
     suggestion_models = {}
@@ -140,10 +141,27 @@ def get_suggestions_for_article(article_text, suggestion_model, suggestion_token
         return {'error': str(e)}
 
 def test_mem(articles):
-    predicted_class = model.predict([articles[1]])[0]
-    predicted_class = label_encoder.inverse_transform([predicted_class])[0]
-    print(predicted_class)
-    return(predicted_class)
+    new_data = [article for article in articles.values()]
+
+    # Preprocess the new data using the loaded vectorizer
+    new_features = vectorizer.transform(new_data)
+
+    # Make predictions using the loaded model
+    predicted_class = random_forest_model.predict(new_features)
+    
+    # Decode the predicted labels using the label encoder
+    predicted_labels = label_encoder.inverse_transform(predicted_class)
+
+    # Find the most common word in the predicted labels
+    most_common_word = Counter(predicted_labels).most_common(1)[0][0]
+
+    print("Predicted Labels:", predicted_labels)
+    print("Most Common Word:", most_common_word)
+
+    return most_common_word
+
+
+
 
 @app.route('/')
 def index():
