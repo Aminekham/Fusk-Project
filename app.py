@@ -149,23 +149,27 @@ def image_from_upload(request):
 
 def image_from_url(request):
     try:
+        print(request.form)
         image_urls = request.form.getlist('image_url')
         img_arrays = []
 
         for image_url in image_urls:
-            response = requests.get(image_url)
-            response.raise_for_status()
-            
-            img_array = np.frombuffer(response.content, dtype=np.uint8)
-            
-            img_arrays.append(img_array)
+            try:
+                response = requests.get(image_url)
+                response.raise_for_status()
+                img_array = np.frombuffer(response.content, dtype=np.uint8)
+                img_arrays.append(img_array)
+            except requests.exceptions.RequestException as e:
+                print(f"Error processing image URL {image_url}: {e}")
+
+        if not img_arrays:
+            raise ValueError("No valid image URL provided.")
 
         return img_arrays
 
     except Exception as e:
         print(f"An error occurred while processing image URLs: {e}")
         return None
-
 
 
 def test_mem(articles):
