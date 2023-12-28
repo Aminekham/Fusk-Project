@@ -26,53 +26,55 @@ label_encoder = joblib.load("label_encoder.pkl")
 # Initialize TF-IDF vectorizer
 vectorizer = joblib.load("tfidf_vectorizer.pkl")
 
-def image_to_articles(img_array):
-    try:
-        img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        threshold_img = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-        text = pytesseract.image_to_string(threshold_img)
+def image_to_articles(img_arrays):
+    all_articles = {}
 
-        # Default keyword
-        keyword = "ARTICLE"
+    for idx, img_array in enumerate(img_arrays):
+        try:
+            img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            threshold_img = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+            text = pytesseract.image_to_string(threshold_img)
+            keyword = "ARTICLE"
 
-        article_matches = re.finditer(r'\b(?:ARTICLE|Article|article)\b', text)
-        indices = [match.start() for match in article_matches]
+            article_matches = re.finditer(r'\b(?:ARTICLE|Article|article)\b', text)
+            indices = [match.start() for match in article_matches]
 
-        # Dictionary to store articles
-        articles_dict = {}
+            # Dictionary to store articles
+            articles_dict = {}
 
-        for i in range(len(indices)):
-            start_index = indices[i]
-            end_index = indices[i + 1] if i + 1 < len(indices) else None
-            article_content = text[start_index:end_index].strip()
-            if article_content:
-                articles_dict[len(articles_dict) + 1] = article_content
+            for i in range(len(indices)):
+                start_index = indices[i]
+                end_index = indices[i + 1] if i + 1 < len(indices) else None
+                article_content = text[start_index:end_index].strip()
+                if article_content:
+                    articles_dict[len(articles_dict) + 1] = article_content
 
-        # If the dictionary is empty, use anything after ":"
-        if not articles_dict:
-            colon_index = text.find(":")
-            if colon_index != -1:
-                keyword = text[:colon_index].strip()
+            # If the dictionary is empty, use anything after ":"
+            if not articles_dict:
+                colon_index = text.find(":")
+                if colon_index != -1:
+                    keyword = text[:colon_index].strip()
 
-        # Re-run with the determined keyword
-        article_matches = re.finditer(fr'\b(?:{re.escape(keyword)})\b', text, re.IGNORECASE)
-        indices = [match.start() for match in article_matches]
+            article_matches = re.finditer(fr'\b(?:{re.escape(keyword)})\b', text, re.IGNORECASE)
+            indices = [match.start() for match in article_matches]
 
-        # Reset dictionary
-        articles_dict = {}
+            articles_dict = {}
 
-        for i in range(len(indices)):
-            start_index = indices[i]
-            end_index = indices[i + 1] if i + 1 < len(indices) else None
-            article_content = text[start_index:end_index].strip()
-            if article_content:
-                articles_dict[len(articles_dict) + 1] = article_content
+            for i in range(len(indices)):
+                start_index = indices[i]
+                end_index = indices[i + 1] if i + 1 < len(indices) else None
+                article_content = text[start_index:end_index].strip()
+                if article_content:
+                    articles_dict[len(articles_dict) + 1] = article_content
 
-        return articles_dict
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return {}
+            all_articles[f'Image_{idx + 1}'] = articles_dict
+
+        except Exception as e:
+            print(f"An error occurred while processing image {idx + 1}: {e}")
+            all_articles[f'Image_{idx + 1}'] = {}
+
+    return all_articles
 
 
 
@@ -154,14 +156,26 @@ def image_from_upload(request):
 
 def image_from_url(request):
     try:
-        image_url = request.form.get('image_url')
-        response = requests.get(image_url)
-        response.raise_for_status()
-        img_array = np.frombuffer(response.content, dtype=np.uint8)
-        return img_array
+        image_urls = request.json.get('image_urls', [])
+        img_arrays = []
+
+        for image_url in image_urls:
+            response = requests.get(image_url)
+            response.raise_for_status()
+            img_array = np.frombuffer(response.text, dtype=np.uint8)  # Use response.text instead of response.json()
+            img_arrays.append(img_array)
+
+        return img_arrays
+
     except Exception as e:
-        print(f"An error occurred while processing image URL: {e}")
+        print(f"An error occurred while processing image URLs: {e}")
         return None
+
+
+    except Exception as e:
+        print(f"An error occurred while processing image URLs: {e}")
+        return None
+
 
 def test_mem(articles):
     new_data = [article for article in articles.values()]
@@ -239,17 +253,11 @@ def predict():
         if 'image' in request.files:
             img_array = image_from_upload(request)
         # Check if the request contains an image URL
-        elif 'image_url' in request.form:
-            img_array = image_from_url(request)
+        img_array = image_from_url(request)
 
         if img_array is None:
             raise ValueError('No valid image or image URL provided in the request.')
 
-        # Call the existing image_to_articles function
-        articles = image_to_articles(img_array)
-
-
-        # Predict the contract type without saving the image
         articles = image_to_articles(img_array)
         predicted_class = test_mem(articles)
         
