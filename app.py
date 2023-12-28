@@ -27,7 +27,7 @@ label_encoder = joblib.load("label_encoder.pkl")
 vectorizer = joblib.load("tfidf_vectorizer.pkl")
 
 def image_to_articles(img_arrays):
-    all_articles = {}
+    articles_list = []
 
     for idx, img_array in enumerate(img_arrays):
         try:
@@ -40,18 +40,14 @@ def image_to_articles(img_arrays):
             article_matches = re.finditer(r'\b(?:ARTICLE|Article|article)\b', text)
             indices = [match.start() for match in article_matches]
 
-            # Dictionary to store articles
-            articles_dict = {}
-
             for i in range(len(indices)):
                 start_index = indices[i]
                 end_index = indices[i + 1] if i + 1 < len(indices) else None
                 article_content = text[start_index:end_index].strip()
                 if article_content:
-                    articles_dict[len(articles_dict) + 1] = article_content
+                    articles_list.append(article_content)
 
-            # If the dictionary is empty, use anything after ":"
-            if not articles_dict:
+            if not articles_list:
                 colon_index = text.find(":")
                 if colon_index != -1:
                     keyword = text[:colon_index].strip()
@@ -59,22 +55,19 @@ def image_to_articles(img_arrays):
             article_matches = re.finditer(fr'\b(?:{re.escape(keyword)})\b', text, re.IGNORECASE)
             indices = [match.start() for match in article_matches]
 
-            articles_dict = {}
-
             for i in range(len(indices)):
                 start_index = indices[i]
                 end_index = indices[i + 1] if i + 1 < len(indices) else None
                 article_content = text[start_index:end_index].strip()
                 if article_content:
-                    articles_dict[len(articles_dict) + 1] = article_content
-
-            all_articles[f'Image_{idx + 1}'] = articles_dict
+                    articles_list.append(article_content)
 
         except Exception as e:
             print(f"An error occurred while processing image {idx + 1}: {e}")
-            all_articles[f'Image_{idx + 1}'] = {}
 
-    return all_articles
+    return {'articles': articles_list}
+
+
 
 
 
@@ -156,13 +149,15 @@ def image_from_upload(request):
 
 def image_from_url(request):
     try:
-        image_urls = request.json.get('image_urls', [])
+        image_urls = request.form.getlist('image_url')
         img_arrays = []
 
         for image_url in image_urls:
             response = requests.get(image_url)
             response.raise_for_status()
-            img_array = np.frombuffer(response.text, dtype=np.uint8)  # Use response.text instead of response.json()
+            
+            img_array = np.frombuffer(response.content, dtype=np.uint8)
+            
             img_arrays.append(img_array)
 
         return img_arrays
@@ -172,14 +167,9 @@ def image_from_url(request):
         return None
 
 
-    except Exception as e:
-        print(f"An error occurred while processing image URLs: {e}")
-        return None
-
 
 def test_mem(articles):
-    new_data = [article for article in articles.values()]
-
+    new_data = [article for article in articles['articles']]
     # Preprocess the new data using the loaded vectorizer
     new_features = vectorizer.transform(new_data)
 
@@ -254,13 +244,13 @@ def predict():
             img_array = image_from_upload(request)
         # Check if the request contains an image URL
         img_array = image_from_url(request)
-
+        print(img_array)
         if img_array is None:
             raise ValueError('No valid image or image URL provided in the request.')
 
         articles = image_to_articles(img_array)
         predicted_class = test_mem(articles)
-        
+        print(predicted_class)
         result_dict = {'predicted_contract': predicted_class}
         result_dict['recommended_content'] = []
         # Directory containing suggestion models and tokenizers
@@ -288,7 +278,7 @@ def predict():
             'Sous_location_contrat': './contracts/Sous_location_contrat/Sous_location_contrat.csv',
         }
 
-        all_article_texts = list(articles.values())
+        all_article_texts = articles['articles']
 
         # Get suggestions for all articles
         all_suggestions = []
@@ -302,7 +292,7 @@ def predict():
 
         print(all_suggestions)
         # Keep only the best two suggestions based on content similarity
-        best_suggestions = get_most_similar_suggestions(list(articles.values()), all_suggestions)
+        best_suggestions = get_most_similar_suggestions(articles['articles'], all_suggestions)
         return jsonify({'recommended:': best_suggestions})
 
     except Exception as e:
