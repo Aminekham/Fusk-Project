@@ -162,10 +162,15 @@ def image_from_url(request):
         for image_url in image_urls:
             response = requests.get(image_url)
             response.raise_for_status()
-            img_array = np.frombuffer(response.content, dtype=np.uint8)
+            img_array = np.frombuffer(response.text, dtype=np.uint8)  # Use response.text instead of response.json()
             img_arrays.append(img_array)
 
         return img_arrays
+
+    except Exception as e:
+        print(f"An error occurred while processing image URLs: {e}")
+        return None
+
 
     except Exception as e:
         print(f"An error occurred while processing image URLs: {e}")
@@ -248,8 +253,7 @@ def predict():
         if 'image' in request.files:
             img_array = image_from_upload(request)
         # Check if the request contains an image URL
-        elif 'image_url' in request.form:
-            img_array = image_from_url(request)
+        img_array = image_from_url(request)
 
         if img_array is None:
             raise ValueError('No valid image or image URL provided in the request.')
